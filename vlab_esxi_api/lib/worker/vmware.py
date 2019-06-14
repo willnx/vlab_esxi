@@ -23,8 +23,7 @@ def show_esxi(username):
         esxi_vms = {}
         for vm in folder.childEntity:
             info = virtual_machine.get_info(vcenter, vm)
-            kind, version = info['note'].split('=')
-            if kind == 'ESXi':
+            if info['meta']['component'] == 'ESXi':
                 esxi_vms[vm.name] = info
     return esxi_vms
 
@@ -49,8 +48,7 @@ def delete_esxi(username, machine_name, logger):
         for entity in folder.childEntity:
             if entity.name == machine_name:
                 info = virtual_machine.get_info(vcenter, entity)
-                kind, version = info['note'].split('=')
-                if kind == 'ESXi':
+                if info['meta']['component'] == 'ESXi':
                     logger.debug('powering off VM')
                     virtual_machine.power(entity, state='off')
                     delete_task = entity.Destroy_Task()
@@ -97,11 +95,15 @@ def create_esxi(username, machine_name, image, network, logger):
                                                      username, machine_name, logger)
         finally:
             ova.close()
-        spec = vim.vm.ConfigSpec()
-        spec.annotation = 'ESXi={}'.format(image)
-        task = the_vm.ReconfigVM_Task(spec)
-        consume_task(task)
-        return virtual_machine.get_info(vcenter, the_vm)
+        meta_data = {'component' : "ESXi",
+                     'created': time.time(),
+                     'version': image,
+                     'configured': False,
+                     'generation': 1,
+                    }
+        virtual_machine.set_meta(the_vm, meta_data)
+        info = virtual_machine.get_info(vcenter, the_vm, ensure_ip=True)
+        return {the_vm.name: info}
 
 
 def list_images():
