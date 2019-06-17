@@ -91,10 +91,17 @@ def create_esxi(username, machine_name, image, network, logger):
                 network_map.network = vcenter.networks[network]
             except KeyError:
                 raise ValueError('No such network named {}'.format(network))
-            the_vm = virtual_machine.deploy_from_ova(vcenter, ova, [network_map],
-                                                     username, machine_name, logger)
+            the_vm = virtual_machine.deploy_from_ova(vcenter=vcenter,
+                                                     ova=ova,
+                                                     network_map=[network_map],
+                                                     username=username,
+                                                     machine_name=machine_name,
+                                                     logger=logger,
+                                                     power_on=False)
         finally:
             ova.close()
+        config_vm(the_vm)
+        virtual_machine.power(the_vm, state='on')
         meta_data = {'component' : "ESXi",
                      'created': time.time(),
                      'version': image,
@@ -132,3 +139,18 @@ def convert_name(name, to_version=False):
         return name.split('-')[-1].replace('.ova', '')
     else:
         return 'esxi-{}.ova'.format(name)
+
+
+def config_vm(the_vm):
+    """Enable hardware-assisted virtualization so 64-bit OSes can run on the
+    virtual ESXi host.
+
+    :Returns: None
+
+    :param the_vm: The new ESXi virtual machine object
+    :type the_vm: vim.VirtualMachine
+    """
+    spec = vim.vm.ConfigSpec()
+    spec.nestedHVEnabled = True
+    task = the_vm.ReconfigVM_Task(spec)
+    consume_task(task)
