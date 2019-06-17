@@ -147,6 +147,17 @@ class TestVMware(unittest.TestCase):
 
         self.assertEqual(output, expected)
 
+    @patch.object(vmware, 'consume_task')
+    def test_config_vm(self, fake_consume_task):
+        """``config_vm`` Enables hardware-assisted virtualization"""
+        fake_vm = MagicMock()
+        vmware.config_vm(fake_vm)
+
+        the_args, _ = fake_vm.ReconfigVM_Task.call_args
+        the_spec = the_args[0]
+
+        self.assertTrue(the_spec.nestedHVEnabled)
+
 
 if __name__ == '__main__':
     unittest.main()
