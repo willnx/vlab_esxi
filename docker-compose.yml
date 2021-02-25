@@ -11,14 +11,14 @@ services:
       - INF_VCENTER_USER=Administrator@vsphere.local
       - INF_VCENTER_PASSWORD=1.Password
     volumes:
-      - ./vlab_esxi_api:/usr/lib/python3.6/site-packages/vlab_esxi_api
+      - ./vlab_esxi_api:/usr/lib/python3.8/site-packages/vlab_esxi_api
     command: ["python3", "app.py"]
 
   esxi-worker:
     image:
       willnx/vlab-esxi-worker
     volumes:
-      - ./vlab_esxi_api:/usr/lib/python3.6/site-packages/vlab_esxi_api
+      - ./vlab_esxi_api:/usr/lib/python3.8/site-packages/vlab_esxi_api
       - /mnt/raid/images/esxi:/images:ro
     environment:
       - INF_VCENTER_SERVER=virtlab.igs.corp
